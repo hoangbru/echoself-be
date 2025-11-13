@@ -1,0 +1,61 @@
+{
+  "name": "echoself",
+  "version": "1.0.0",
+  "description": "Stream music that reflects you — Echoself lets you discover, create, and feel your own sound.",
+  "main": "dist/server.js",
+  "keywords": [
+    "Echoself",
+    "music streaming",
+    "online music player",
+    "playlist",
+    "upload songs",
+    "discover music",
+    "music library",
+    "audio streaming",
+    "music discovery",
+    "stream music",
+    "free music player"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts",
+    "test": "jest",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev --name init"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.7.1",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "joi": "^17.11.0",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.0",
+    "@types/jest": "^27.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^14.0.0",
+    "eslint": "^7.0.0",
+    "jest": "^27.0.0",
+    "prisma": "^5.7.1",
+    "ts-node": "^10.0.0",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hoangbru/echoself-be.git"
+  },
+  "author": "hoangbru",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hoangbru/echoself-be/issues"
+  },
+  "homepage": "https://github.com/hoangbru/echoself-be#readme"
+}

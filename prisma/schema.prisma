@@ -1,0 +1,188 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+  PENDING
+}
+
+enum AlbumType {
+  ALBUM
+  SINGLE
+  EP
+}
+
+model User {
+  id          String   @id @default(uuid())
+  userName    String   @unique
+  email       String   @unique
+  password    String
+  displayName String?
+  avatarUri   String?
+  role        Role     @default(USER)
+  status      Status   @default(ACTIVE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  playlists        Playlist[]
+  listeningHistory ListeningHistory[]
+}
+
+model Playlist {
+  id            String   @id @default(uuid())
+  userId        String
+  title         String
+  imageUri      String?
+  followerCount Int      @default(0)
+  description   String?
+  isPublic      Boolean  @default(false)
+  isFavorite    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  songs PlayListSong[]
+}
+
+model Song {
+  id          String   @id @default(uuid())
+  title       String
+  duration    Int // Store in seconds
+  releaseDate DateTime
+  albumId     String
+  url         String
+  coverUri    String
+  views       Int      @default(0)
+  lyrics      String?
+  trackNumber Int? // Position within an album
+
+  album            Album              @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  genres           GenreSong[]
+  artists          SongArtist[]
+  playlists        PlayListSong[]
+  listeningHistory ListeningHistory[]
+}
+
+model Artist {
+  id         String   @id @default(uuid())
+  name       String
+  biography  String?
+  avatarUri  String?
+  country    String?
+  isVerified Boolean  @default(false)
+  status     Status   @default(ACTIVE)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  songs  SongArtist[]
+  albums ArtistAlbum[]
+}
+
+model Album {
+  id          String    @id @default(uuid())
+  title       String
+  releaseDate DateTime
+  coverUri    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  type        AlbumType @default(ALBUM)
+
+  songs   Song[]
+  artists ArtistAlbum[]
+}
+
+model Genre {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  status      Status   @default(ACTIVE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  songs GenreSong[]
+}
+
+model ListeningHistory {
+  id       String   @id @default(uuid())
+  userId   String
+  songId   String
+  playedAt DateTime @default(now())
+  duration Int? // Duration listened in seconds
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song Song @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@index([userId, playedAt])
+  @@index([songId, playedAt])
+  @@index([playedAt])
+}
+
+model EmailVerification {
+  id        String   @id @default(uuid())
+  email     String
+  code      String // The 6-digit verification code
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+model GenreSong {
+  songId    String
+  genreId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  song  Song  @relation(fields: [songId], references: [id], onDelete: Cascade)
+  genre Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([songId, genreId])
+}
+
+model SongArtist {
+  songId    String
+  artistId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  song   Song   @relation(fields: [songId], references: [id], onDelete: Cascade)
+  artist Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@id([songId, artistId])
+}
+
+model ArtistAlbum {
+  artistId  String
+  albumId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  artist Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  album  Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@id([artistId, albumId])
+}
+
+model PlayListSong {
+  songId     String
+  playListId String
+  position   Int // Order of the song in the playlist
+  createdAt  DateTime @default(now())
+
+  song     Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+  playlist Playlist @relation(fields: [playListId], references: [id], onDelete: Cascade)
+
+  @@id([songId, playListId])
+}
