@@ -1,29 +1,23 @@
-import express from 'express';
+import express, { Application } from "express";
 import cors from "cors";
-import routes from './routes';
-import errorHandler from './middleware/errorHandler';
 
-const app = express();
+import { routes } from "./routes";
+import { errorMiddleware } from "./shared/errors/error.middleware";
 
-const corsOptions = {
-  origin: process.env.CORS_ORIGIN?.split(",") || [],
-  optionsSuccessStatus: 200,
-};
+export function createApp(): Application {
+  const app = express();
 
-// Middleware
-app.use(cors(corsOptions));
-app.use(express.json());
+  app.use(cors());
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
-// Routes
-app.use('/api', routes);
+  app.use("/api", routes);
 
-// Health check
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "OK", message: "API running" });
-});
+  app.get("/health", (_, res) => {
+    res.status(200).json({ status: "ok" });
+  });
 
-// Error handling middleware
-app.use((req, res) => res.status(404).json({ error: "Route not found" }));
-app.use(errorHandler);
+  app.use(errorMiddleware);
 
-export default app;
+  return app;
+}
