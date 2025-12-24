@@ -1,16 +1,20 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { SongRepository } from "@/modules/songs/song.repository";
-import { prisma } from "../prisma/prisma.client";
-import { GetSongsInput } from "@/modules/songs/song.types";
+import { GetSongsInput, SongSortType } from "@/modules/songs/song.types";
 
 export class PrismaSongRepository implements SongRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
   async findMany(input: GetSongsInput) {
     const { page, limit, genre, artistId, search, sort } = input;
 
-    const where: any = {};
+    const where: Prisma.SongWhereInput = {};
 
     if (search) {
-      where.title = { contains: search, mode: "insensitive" };
+      where.title = {
+        contains: search,
+        mode: "insensitive",
+      };
     }
 
     if (artistId) {
@@ -23,21 +27,24 @@ export class PrismaSongRepository implements SongRepository {
       where.genres = {
         some: {
           genre: {
-            name: { equals: genre, mode: "insensitive" },
+            name: {
+              equals: genre,
+              mode: "insensitive",
+            },
           },
         },
       };
     }
 
     const orderBy: Prisma.SongOrderByWithRelationInput | undefined =
-      sort === "latest"
-        ? { releaseDate: Prisma.SortOrder.desc }
-        : sort === "popular"
-        ? { views: Prisma.SortOrder.desc }
+      sort === SongSortType.LATEST
+        ? { releaseDate: "desc" }
+        : sort === SongSortType.POPULAR
+        ? { views: "desc" }
         : undefined;
 
     const [songs, total] = await Promise.all([
-      prisma.song.findMany({
+      this.prisma.song.findMany({
         where,
         include: {
           album: true,
@@ -49,7 +56,7 @@ export class PrismaSongRepository implements SongRepository {
         skip: (page - 1) * limit,
         take: limit,
       }),
-      prisma.song.count({ where }),
+      this.prisma.song.count({ where }),
     ]);
 
     return { songs, total };

@@ -28,7 +28,7 @@ export function errorMiddleware(
   }
 
   // Unknown / Programming Error
-  console.error("❌ Unexpected Error:", err);
+  console.error("Unexpected Error:", err);
 
   return res.status(500).json({
     error: {

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { HttpError } from "../errors/http-error";
+import { verifyToken } from "../utils/jwt";
+import { AppError } from "../errors/app-error";
 
 export interface JwtPayload {
   userId: string;
@@ -10,31 +10,27 @@ export interface JwtPayload {
 declare global {
   namespace Express {
     interface Request {
-      user?: JwtPayload;
+      user?: {
+        userId: string;
+        role: string;
+      };
     }
   }
 }
 
-export const auth =
-  (roles?: Array<JwtPayload["role"]>) =>
-  (req: Request, _res: Response, next: NextFunction) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith("Bearer ")) {
-      throw new HttpError(401, "Missing authorization token");
-    }
+export const authenticate = (req: Request, _: Response, next: NextFunction) => {
+  const header = req.headers.authorization;
 
-    const token = authHeader.split(" ")[1];
+  if (!header?.startsWith("Bearer ")) {
+    throw new AppError(401, "Missing access token");
+  }
 
-    try {
-      const payload = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+  const payload = verifyToken(header.split(" ")[1]);
 
-      if (roles && !roles.includes(payload.role)) {
-        throw new HttpError(403, "Forbidden");
-      }
+  if (payload.status !== "ACTIVE") {
+    throw new AppError(403, "Account is not active");
+  }
 
-      req.user = payload;
-      next();
-    } catch {
-      throw new HttpError(401, "Invalid or expired token");
-    }
-  };
+  req.user = payload;
+  next();
+};

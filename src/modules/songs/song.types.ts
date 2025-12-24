@@ -1,4 +1,7 @@
-export type SongSortType = "trending" | "latest" | "popular";
+export enum SongSortType {
+  LATEST = "latest",
+  POPULAR = "popular",
+}
 
 export interface GetSongsInput {
   page: number;

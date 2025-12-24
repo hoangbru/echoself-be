@@ -1,14 +1,9 @@
-import { AppError } from "@/shared/errors/app-error";
+import { SongRepository } from "./song.repository";
 
 export class SongUseCase {
-  async getSongs(query: any) {
-    if (query.limit > 50) {
-      throw new AppError(400, "Limit must be <= 50");
-    }
+  constructor(private readonly songRepo: SongRepository) {}
 
-    return {
-      items: [],
-      pagination: {},
-    };
+  async getSongs(query: any) {
+    return this.songRepo.findMany(query);
   }
 }
