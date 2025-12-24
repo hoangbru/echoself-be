@@ -15,4 +15,22 @@ export class AuthController extends BaseController {
     const result = await this.authUseCase.login(req.body);
     this.ok(res, result);
   });
+
+  refresh = this.asyncHandler(async (req, res) => {
+    const { refreshToken } = req.body;
+    const result = await this.authUseCase.refresh(refreshToken);
+    res.json(result);
+  });
+
+  logout = this.asyncHandler(async (req, res) => {
+    const { refreshToken } = req.body;
+    await this.authUseCase.logout(refreshToken);
+    this.noContent(res);
+  });
+
+  logoutAll = this.asyncHandler(async (req, res) => {
+    const { userId } = req.user as { userId: string };
+    await this.authUseCase.logoutAll(userId);
+    this.noContent(res);
+  });
 }

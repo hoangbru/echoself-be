@@ -1,10 +1,10 @@
-import { AppError } from "@/shared/errors/app-error";
+import { ForbiddenError } from "../errors/http-errors";
 
 export const authorize =
   (...roles: Array<"ADMIN" | "USER">) =>
   (req: any, _: any, next: any) => {
     if (!req.user || !roles.includes(req.user.role)) {
-      throw new AppError(403, "Forbidden");
+      throw new ForbiddenError("Forbidden");
     }
     next();
   };

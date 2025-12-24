@@ -1,3 +1,12 @@
-import { HttpError } from "./http-error";
+export class AppError extends Error {
+  public readonly code: string;
+  public readonly details?: unknown;
 
-export class AppError extends HttpError {}
+  constructor(code: string, message: string, details?: unknown) {
+    super(message);
+    this.code = code;
+    this.details = details;
+
+    Error.captureStackTrace(this, this.constructor);
+  }
+}

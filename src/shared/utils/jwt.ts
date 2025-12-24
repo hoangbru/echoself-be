@@ -1,16 +1,20 @@
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET!;
-const JWT_EXPIRES_IN = "7d";
+const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET!;
+const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!;
 
 export interface JwtPayload {
   userId: string;
   role: "USER" | "ADMIN";
-  status: "ACTIVE" | "INACTIVE" | "PENDING";
 }
+export const signAccessToken = (payload: JwtPayload) =>
+  jwt.sign(payload, ACCESS_SECRET, { expiresIn: "15m" });
 
-export const signToken = (payload: JwtPayload) =>
-  jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+export const signRefreshToken = (payload: { userId: string }) =>
+  jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
 
-export const verifyToken = (token: string) =>
-  jwt.verify(token, JWT_SECRET) as JwtPayload;
+export const verifyAccessToken = (token: string) =>
+  jwt.verify(token, ACCESS_SECRET) as JwtPayload;
+
+export const verifyRefreshToken = (token: string) =>
+  jwt.verify(token, REFRESH_SECRET) as { userId: string };

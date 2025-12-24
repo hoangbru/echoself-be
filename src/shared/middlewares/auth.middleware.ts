@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { verifyToken } from "../utils/jwt";
-import { AppError } from "../errors/app-error";
+import { verifyAccessToken } from "../utils/jwt";
+import { UnauthorizedError } from "../errors/http-errors";
 
 export interface JwtPayload {
   userId: string;
@@ -22,14 +22,10 @@ export const authenticate = (req: Request, _: Response, next: NextFunction) => {
   const header = req.headers.authorization;
 
   if (!header?.startsWith("Bearer ")) {
-    throw new AppError(401, "Missing access token");
+    throw new UnauthorizedError("Missing access token");
   }
 
-  const payload = verifyToken(header.split(" ")[1]);
-
-  if (payload.status !== "ACTIVE") {
-    throw new AppError(403, "Account is not active");
-  }
+  const payload = verifyAccessToken(header.split(" ")[1]);
 
   req.user = payload;
   next();

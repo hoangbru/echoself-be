@@ -12,7 +12,10 @@ export class AlbumUseCase {
     const album = await this.albumRepo.findById(id);
 
     if (!album) {
-      throw new AppError(404, "Album not found");
+      throw new AppError(
+        "ALBUM_NOT_FOUND",
+        "Album not found"
+      );
     }
 
     return album;

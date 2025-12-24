@@ -1,5 +1,7 @@
+import crypto from "crypto";
+import { User } from "@prisma/client";
 import { hashPassword, comparePassword } from "@/shared/utils/password";
-import { signToken } from "@/shared/utils/jwt";
+import { signAccessToken } from "@/shared/utils/jwt";
 
 export class AuthService {
   async hash(password: string) {
@@ -10,12 +12,14 @@ export class AuthService {
     return comparePassword(password, hash);
   }
 
-  generateToken(user: any) {
-    return signToken({
+  generateAccessToken(user: User) {
+    return signAccessToken({
       userId: user.id,
       role: user.role,
-      status: user.status,
     });
   }
-  
+
+  generateRefreshToken() {
+    return crypto.randomBytes(64).toString("hex");
+  }
 }

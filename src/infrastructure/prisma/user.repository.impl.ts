@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { UserRepository } from "@/modules/user/user.repository";
 
 export class PrismaUserRepository implements UserRepository {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient) {}
 
   findByEmail(email: string) {
     return this.prisma.user.findUnique({ where: { email } });

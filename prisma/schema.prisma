@@ -44,6 +44,8 @@ model User {
   listeningHistories ListeningHistory[]
   likedSongs         LikedSong[]
   followedArtists    FollowedArtist[]
+
+  refreshToken RefreshToken[]
 }
 
 model Artist {
@@ -217,6 +219,19 @@ model ListeningHistory {
 
   @@index([userId, playedAt])
   @@index([songId, playedAt])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  revoked   Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // Model for Email Verification
