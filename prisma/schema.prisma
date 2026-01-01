@@ -1,0 +1,545 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER MANAGEMENT
+// ============================================
+
+enum UserRole {
+  USER
+  ARTIST
+  ADMIN
+}
+
+enum SubscriptionPlan {
+  FREE
+  PREMIUM
+  FAMILY
+  STUDENT
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  TRIAL
+}
+
+model User {
+  id                   String    @id @default(uuid())
+  email                String    @unique
+  username             String    @unique
+  password             String
+  displayName          String?
+  avatar               String?
+  bio                  String?
+  role                 UserRole  @default(USER)
+  isVerified           Boolean   @default(false)
+  verificationToken    String?
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastLoginAt DateTime?
+
+  subscription      Subscription?
+  artists           Artist[]
+  playlists         Playlist[]
+  likedTracks       LikedTrack[]
+  likedAlbums       LikedAlbum[]
+  likedPlaylists    LikedPlaylist[]
+  followingArtists  FollowArtist[]
+  streamingSessions StreamingSession[]
+  streamingHistory  StreamingHistory[]
+  comments          Comment[]
+  notifications     Notification[]
+  activities        UserActivity[]
+
+  @@index([email])
+  @@index([username])
+  @@map("users")
+}
+
+model Subscription {
+  id            String             @id @default(uuid())
+  userId        String             @unique
+  plan          SubscriptionPlan   @default(FREE)
+  status        SubscriptionStatus @default(ACTIVE)
+  startDate     DateTime           @default(now())
+  endDate       DateTime?
+  autoRenew     Boolean            @default(true)
+  paymentMethod String?
+
+  stripeCustomerId     String? @unique
+  stripeSubscriptionId String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+model Payment {
+  id              String  @id @default(uuid())
+  subscriptionId  String
+  amount          Decimal @db.Decimal(10, 2)
+  currency        String  @default("USD")
+  status          String // succeeded, failed, pending
+  paymentMethod   String
+  stripePaymentId String? @unique
+
+  createdAt DateTime @default(now())
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@index([status])
+  @@map("payments")
+}
+
+// ============================================
+// ARTIST & MUSIC CONTENT
+// ============================================
+
+model Artist {
+  id               String  @id @default(uuid())
+  userId           String
+  stageName        String
+  bio              String?
+  avatar           String?
+  coverImage       String?
+  verified         Boolean @default(false)
+  monthlyListeners Int     @default(0)
+  totalFollowers   Int     @default(0)
+
+  // Social links
+  website   String?
+  spotify   String?
+  youtube   String?
+  instagram String?
+  twitter   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  albums    Album[]
+  tracks    Track[]
+  followers FollowArtist[]
+
+  @@index([userId])
+  @@index([stageName])
+  @@map("artists")
+}
+
+model FollowArtist {
+  id        String   @id @default(uuid())
+  userId    String
+  artistId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  artist Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, artistId])
+  @@index([userId])
+  @@index([artistId])
+  @@map("follow_artists")
+}
+
+enum AlbumType {
+  SINGLE
+  EP
+  ALBUM
+  COMPILATION
+}
+
+model Album {
+  id          String    @id @default(uuid())
+  artistId    String
+  title       String
+  description String?
+  coverImage  String
+  albumType   AlbumType @default(ALBUM)
+  releaseDate DateTime
+  totalTracks Int       @default(0)
+  duration    Int       @default(0) // in seconds
+
+  // Stats
+  playCount Int @default(0)
+  likeCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  artist  Artist       @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  tracks  Track[]
+  likedBy LikedAlbum[]
+  genres  AlbumGenre[]
+
+  @@index([artistId])
+  @@index([releaseDate])
+  @@map("albums")
+}
+
+enum AudioQuality {
+  LOW // 96kbps
+  MEDIUM // 128kbps
+  HIGH // 256kbps
+  LOSSLESS // FLAC
+}
+
+model Track {
+  id          String  @id @default(uuid())
+  artistId    String
+  albumId     String?
+  title       String
+  duration    Int // in seconds
+  trackNumber Int?
+
+  // File info
+  audioUrl     String
+  audioQuality AudioQuality @default(HIGH)
+  fileSize     Int // in bytes
+  mimeType     String
+
+  lyrics   String?
+  isrc     String? // International Standard Recording Code
+  explicit Boolean @default(false)
+
+  // Stats
+  playCount  Int @default(0)
+  likeCount  Int @default(0)
+  shareCount Int @default(0)
+
+  // Status
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  artist            Artist             @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  album             Album?             @relation(fields: [albumId], references: [id], onDelete: SetNull)
+  likedBy           LikedTrack[]
+  playlistTracks    PlaylistTrack[]
+  streamingHistory  StreamingHistory[]
+  streamingSessions StreamingSession[]
+  comments          Comment[]
+  genres            TrackGenre[]
+
+  @@index([artistId])
+  @@index([albumId])
+  @@index([title])
+  @@index([playCount])
+  @@map("tracks")
+}
+
+model Genre {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  slug        String  @unique
+  description String?
+  imageUrl    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tracks    TrackGenre[]
+  albums    AlbumGenre[]
+  playlists PlaylistGenre[]
+
+  @@index([slug])
+  @@map("genres")
+}
+
+model TrackGenre {
+  trackId String
+  genreId String
+
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  genre Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([trackId, genreId])
+  @@map("track_genres")
+}
+
+model AlbumGenre {
+  albumId String
+  genreId String
+
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  genre Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([albumId, genreId])
+  @@map("album_genres")
+}
+
+// ============================================
+// PLAYLISTS
+// ============================================
+
+enum PlaylistVisibility {
+  PUBLIC
+  PRIVATE
+  UNLISTED
+}
+
+model Playlist {
+  id              String             @id @default(uuid())
+  userId          String
+  title           String
+  description     String?
+  coverImage      String?
+  visibility      PlaylistVisibility @default(PUBLIC)
+  isCollaborative Boolean            @default(false)
+
+  // Stats
+  totalTracks   Int @default(0)
+  duration      Int @default(0) // in seconds
+  followerCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tracks  PlaylistTrack[]
+  likedBy LikedPlaylist[]
+  genres  PlaylistGenre[]
+
+  @@index([userId])
+  @@index([visibility])
+  @@map("playlists")
+}
+
+model PlaylistTrack {
+  id         String   @id @default(uuid())
+  playlistId String
+  trackId    String
+  position   Int // order in playlist
+  addedBy    String? // userId who added
+  addedAt    DateTime @default(now())
+
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  track    Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, trackId])
+  @@index([playlistId])
+  @@index([trackId])
+  @@map("playlist_tracks")
+}
+
+model PlaylistGenre {
+  playlistId String
+  genreId    String
+
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  genre    Genre    @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([playlistId, genreId])
+  @@map("playlist_genres")
+}
+
+// ============================================
+// USER INTERACTIONS
+// ============================================
+
+model LikedTrack {
+  id        String   @id @default(uuid())
+  userId    String
+  trackId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, trackId])
+  @@index([userId])
+  @@index([trackId])
+  @@map("liked_tracks")
+}
+
+model LikedAlbum {
+  id        String   @id @default(uuid())
+  userId    String
+  albumId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, albumId])
+  @@index([userId])
+  @@index([albumId])
+  @@map("liked_albums")
+}
+
+model LikedPlaylist {
+  id         String   @id @default(uuid())
+  userId     String
+  playlistId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, playlistId])
+  @@index([userId])
+  @@index([playlistId])
+  @@map("liked_playlists")
+}
+
+model Comment {
+  id       String  @id @default(uuid())
+  userId   String
+  trackId  String
+  content  String
+  parentId String? // for nested comments
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track   Track     @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([userId])
+  @@index([trackId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+// ============================================
+// STREAMING & ANALYTICS
+// ============================================
+
+model StreamingSession {
+  id           String  @id @default(uuid())
+  userId       String?
+  trackId      String
+  sessionToken String  @unique
+
+  // Session info
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  duration  Int       @default(0) // actual listening duration in seconds
+  completed Boolean   @default(false) // if track was fully played
+
+  // Technical info
+  quality    AudioQuality @default(HIGH)
+  deviceType String? // mobile, desktop, web
+  ipAddress  String?
+  userAgent  String?
+
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([trackId])
+  @@index([startedAt])
+  @@map("streaming_sessions")
+}
+
+model StreamingHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  trackId   String
+  playedAt  DateTime @default(now())
+  duration  Int // how long user listened in seconds
+  completed Boolean  @default(false)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([trackId])
+  @@index([playedAt])
+  @@map("streaming_history")
+}
+
+enum ActivityType {
+  TRACK_PLAYED
+  TRACK_LIKED
+  ALBUM_LIKED
+  PLAYLIST_CREATED
+  PLAYLIST_FOLLOWED
+  ARTIST_FOLLOWED
+  COMMENT_POSTED
+}
+
+model UserActivity {
+  id           String       @id @default(uuid())
+  userId       String
+  activityType ActivityType
+  metadata     Json? // flexible field for activity-specific data
+  createdAt    DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([activityType])
+  @@index([createdAt])
+  @@map("user_activities")
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+enum NotificationType {
+  NEW_FOLLOWER
+  NEW_RELEASE
+  PLAYLIST_UPDATE
+  COMMENT_REPLY
+  SYSTEM_ANNOUNCEMENT
+}
+
+model Notification {
+  id       String           @id @default(uuid())
+  userId   String
+  type     NotificationType
+  title    String
+  message  String
+  metadata Json? // flexible field for notification data
+  isRead   Boolean          @default(false)
+
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ============================================
+// SEARCH & RECOMMENDATIONS
+// ============================================
+
+model SearchHistory {
+  id          String   @id @default(uuid())
+  userId      String?
+  query       String
+  resultCount Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([query])
+  @@index([createdAt])
+  @@map("search_history")
+}
