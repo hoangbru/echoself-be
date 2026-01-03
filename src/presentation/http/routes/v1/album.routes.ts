@@ -1,8 +1,11 @@
-import { Router } from "express";
-import { authMiddleware, roleMiddleware } from "../../middlewares";
+import { RequestHandler, Router } from "express";
+import { roleMiddleware } from "../../middlewares";
 import { AlbumController } from "../../controllers/AlbumController";
 
-export function createAlbumRoutes(controller: AlbumController): Router {
+export function createAlbumRoutes(
+  controller: AlbumController,
+  authMiddleware: RequestHandler
+): Router {
   const router = Router();
 
   // Public routes

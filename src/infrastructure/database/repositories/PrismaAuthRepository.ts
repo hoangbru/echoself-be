@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { User } from "@/domain/entities/User";
 import { IUserRepository } from "@/domain/repositories/IUserRepository";
 
-export class PrismaUserRepository implements IUserRepository {
+export class PrismaAuthRepository implements IUserRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async save(user: User): Promise<User> {

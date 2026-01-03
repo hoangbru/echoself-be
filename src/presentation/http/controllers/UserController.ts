@@ -1,42 +1,12 @@
 import { Request, Response, NextFunction } from "express";
-import { RegisterUser } from "@/application/use-cases/user/RegisterUser";
-import { GetUserById } from "@/application/use-cases/user/GetUserById";
-import { UpdateUserProfile } from "@/application/use-cases/user/UpdateUserProfile";
+
+import { GetUserById, UpdateUserProfile } from "@/application/use-cases/user";
 
 export class UserController {
   constructor(
-    private readonly registerUser: RegisterUser,
     private readonly getUserById: GetUserById,
     private readonly updateUserProfile: UpdateUserProfile
   ) {}
-
-  async register(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const user = await this.registerUser.execute({
-        email: req.body.email,
-        username: req.body.username,
-        password: req.body.password,
-        displayName: req.body.displayName,
-      });
-
-      res.status(201).json({
-        success: true,
-        message: "User registered successfully",
-        data: {
-          id: user.id,
-          email: user.email,
-          username: user.username,
-          displayName: user.displayName,
-        },
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
 
   async getById(
     req: Request,

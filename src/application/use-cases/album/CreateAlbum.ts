@@ -1,5 +1,5 @@
-import { IAlbumRepository } from "../../../domain/repositories/IAlbumRepository";
-import { Album } from "../../../domain/entities/Album";
+import { IAlbumRepository } from "@/domain/repositories/IAlbumRepository";
+import { Album } from "@/domain/entities/Album";
 import { v4 as uuidv4 } from "uuid";
 import { AlbumType } from "@prisma/client";
 

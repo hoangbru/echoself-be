@@ -1,5 +1,5 @@
-import { IPlaylistRepository } from "../../../domain/repositories/IPlaylistRepository";
-import { Playlist } from "../../../domain/entities/Playlist";
+import { IPlaylistRepository } from "@/domain/repositories/IPlaylistRepository";
+import { Playlist } from "@/domain/entities/Playlist";
 import { v4 as uuidv4 } from "uuid";
 import { PlaylistVisibility } from "@prisma/client";
 

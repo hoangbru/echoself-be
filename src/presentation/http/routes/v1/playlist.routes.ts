@@ -1,8 +1,10 @@
-import { Router } from "express";
+import { RequestHandler, Router } from "express";
 import { PlaylistController } from "../../controllers/PlaylistController";
-import { authMiddleware } from "../../middlewares";
 
-export function createPlaylistRoutes(controller: PlaylistController): Router {
+export function createPlaylistRoutes(
+  controller: PlaylistController,
+  authMiddleware: RequestHandler
+): Router {
   const router = Router();
 
   // Public routes

@@ -8,8 +8,7 @@ export interface JWTPayload {
 }
 
 export class TokenHelper {
-  private static readonly JWT_SECRET =
-    process.env.JWT_SECRET || "your-secret-key";
+  private static readonly JWT_SECRET = process.env.JWT_SECRET!;
   private static readonly JWT_EXPIRES_IN = "7d";
   private static readonly REFRESH_TOKEN_EXPIRES_IN = "30d";
 

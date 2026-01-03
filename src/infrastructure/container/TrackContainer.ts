@@ -1,6 +1,7 @@
-import { UploadTrack } from "@/application/use-cases/track/UploadTrack";
-import { TrackController } from "@/presentation/http/controllers/TrackController";
 import { PrismaClient } from "@prisma/client";
+
+import { UploadTrack } from "@/application/use-cases/track";
+import { TrackController } from "@/presentation/http/controllers/TrackController";
 import { ServiceContainer } from "./ServiceContainer";
 import { PrismaTrackRepository } from "../database/repositories/PrismaTrackRepository";
 
