@@ -9,7 +9,6 @@ import {
   errorHandler,
   notFoundHandler,
   apiLimiter,
-  setTokenBlacklistService,
 } from "./presentation/http/middlewares";
 import { AppContainer } from "./infrastructure/container/AppContainer";
 import { setupRoutes } from "./presentation/http/routes";
@@ -24,7 +23,7 @@ class Server {
     this.app = express();
     this.container = AppContainer.getInstance();
 
-    setTokenBlacklistService(this.container.serviceContainer.tokenBlacklistService);
+    // setTokenBlacklistService(this.container.serviceContainer.tokenBlacklistService);
     this.port = parseInt(process.env.PORT || "3000", 10);
 
     this.setupMiddlewares();

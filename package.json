@@ -22,13 +22,17 @@
     "start": "node dist/main.js",
     "test": "jest",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "prisma:seed:genres": "ts-node prisma/seed.ts",
+    "prisma:seed:demo": "SEED_DEMO_DATA=true ts-node prisma/seed.ts",
+    "prisma:reset": "prisma migrate reset && npm run prisma:seed"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.958.0",
     "@prisma/client": "^5.7.1",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.8.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",

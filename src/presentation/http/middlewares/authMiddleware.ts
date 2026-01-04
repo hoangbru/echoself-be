@@ -5,12 +5,6 @@ import { TokenHelper } from "@/shared/utils/tokenHelper";
 import { prisma } from "@/config/database.config";
 import { ITokenBlacklistService } from "@/application/interfaces";
 
-let tokenBlacklistService: ITokenBlacklistService;
-
-export function setTokenBlacklistService(service: ITokenBlacklistService) {
-  tokenBlacklistService = service;
-}
-
 export const createAuthMiddleware = (
   tokenBlacklistService: ITokenBlacklistService
 ) => {

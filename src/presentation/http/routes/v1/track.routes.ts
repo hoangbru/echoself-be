@@ -1,21 +1,61 @@
 import { RequestHandler, Router } from "express";
 
 import { TrackController } from "../../controllers/TrackController";
-import { uploadTrackMiddleware, validateRequest } from "../../middlewares";
-import { uploadTrackSchema } from "../../validators/trackValidator";
+import {
+  roleMiddleware,
+  uploadLimiter,
+  uploadTrackMiddleware,
+  validateRequest,
+} from "../../middlewares";
+import {
+  createTrackSchema,
+  trackIdSchema,
+} from "../../validators/trackValidator";
 
 export function createTrackRoutes(
-  trackController: TrackController,
+  controller: TrackController,
   authMiddleware: RequestHandler
 ): Router {
   const router = Router();
 
+  // Public routes
+  router.get(
+    "/:id",
+    validateRequest(trackIdSchema),
+    controller.getById.bind(controller)
+  );
+
+  // Protected routes (Artist only)
+  router.use(authMiddleware);
+  router.use(roleMiddleware("ARTIST", "ADMIN"));
+
+  // Create track
   router.post(
     "/",
-    authMiddleware,
+    uploadLimiter,
     uploadTrackMiddleware,
-    validateRequest(uploadTrackSchema),
-    (req, res, next) => trackController.upload(req, res, next)
+    validateRequest(createTrackSchema),
+    controller.create.bind(controller)
+  );
+
+  // Publish/Unpublish
+  router.patch(
+    "/:id/publish",
+    validateRequest(trackIdSchema),
+    controller.publish.bind(controller)
+  );
+
+  router.patch(
+    "/:id/unpublish",
+    validateRequest(trackIdSchema),
+    controller.unpublish.bind(controller)
+  );
+
+  // Delete track
+  router.delete(
+    "/:id",
+    validateRequest(trackIdSchema),
+    controller.delete.bind(controller)
   );
 
   return router;

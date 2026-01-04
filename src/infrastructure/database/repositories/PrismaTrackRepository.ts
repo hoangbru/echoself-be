@@ -1,9 +1,9 @@
+import { Track } from "@/domain/entities";
+import { ITrackRepository } from "@/domain/repositories";
 import {
   PrismaClient,
   AudioQuality as PrismaAudioQuality,
-} from '@prisma/client';
-import { Track } from '@/domain/entities/Track';
-import { ITrackRepository } from '@/domain/repositories/ITrackRepository';
+} from "@prisma/client";
 
 export class PrismaTrackRepository implements ITrackRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -25,8 +25,10 @@ export class PrismaTrackRepository implements ITrackRepository {
         isrc: track.isrc,
         explicit: track.explicit,
         isPublished: track.isPublished,
+        publishedAt: track.publishedAt,
         playCount: track.playCount,
         likeCount: track.likeCount,
+        shareCount: track.shareCount,
       },
     });
 
@@ -41,10 +43,16 @@ export class PrismaTrackRepository implements ITrackRepository {
     return track ? this.toDomain(track) : null;
   }
 
-  async findByArtist(artistId: string): Promise<Track[]> {
+  async findByArtist(
+    artistId: string,
+    includeUnpublished: boolean = false
+  ): Promise<Track[]> {
     const tracks = await this.prisma.track.findMany({
-      where: { artistId },
-      orderBy: { createdAt: 'desc' },
+      where: {
+        artistId,
+        ...(includeUnpublished ? {} : { isPublished: true }),
+      },
+      orderBy: [{ isPublished: "desc" }, { createdAt: "desc" }],
     });
 
     return tracks.map(this.toDomain);
@@ -55,12 +63,12 @@ export class PrismaTrackRepository implements ITrackRepository {
       where: { id: track.id },
       data: {
         title: track.title,
-        duration: track.duration,
-        albumId: track.albumId,
-        trackNumber: track.trackNumber,
         lyrics: track.lyrics,
         explicit: track.explicit,
+        albumId: track.albumId,
+        trackNumber: track.trackNumber,
         isPublished: track.isPublished,
+        publishedAt: track.publishedAt,
         updatedAt: new Date(),
       },
     });
@@ -80,12 +88,61 @@ export class PrismaTrackRepository implements ITrackRepository {
         artistId,
         title: {
           equals: title,
-          mode: 'insensitive',
+          mode: "insensitive",
         },
       },
     });
 
     return count > 0;
+  }
+
+  async attachGenres(trackId: string, genreIds: string[]): Promise<void> {
+    // Delete existing genres
+    await this.prisma.trackGenre.deleteMany({
+      where: { trackId },
+    });
+
+    // Attach new genres
+    await this.prisma.trackGenre.createMany({
+      data: genreIds.map((genreId) => ({
+        trackId,
+        genreId,
+      })),
+    });
+  }
+
+  async getTrackWithDetails(trackId: string): Promise<any> {
+    return await this.prisma.track.findUnique({
+      where: { id: trackId },
+      include: {
+        artist: {
+          select: {
+            id: true,
+            stageName: true,
+            avatar: true,
+            verified: true,
+          },
+        },
+        album: {
+          select: {
+            id: true,
+            title: true,
+            coverImage: true,
+          },
+        },
+        genres: {
+          include: {
+            genre: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+          },
+        },
+      },
+    });
   }
 
   private toDomain(track: any): Track {
@@ -104,10 +161,12 @@ export class PrismaTrackRepository implements ITrackRepository {
       track.isrc,
       track.explicit,
       track.isPublished,
+      track.publishedAt,
       track.playCount,
       track.likeCount,
+      track.shareCount,
       track.createdAt,
-      track.updatedAt,
+      track.updatedAt
     );
   }
 }
