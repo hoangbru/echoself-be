@@ -1,7 +1,5 @@
-import { Request } from "express";
-import fs from "fs";
-import path from "path";
 import multer from "multer";
+import { Request } from "express";
 
 interface UploadOptions {
   allowedMimeTypes: string[];
@@ -10,24 +8,8 @@ interface UploadOptions {
 }
 
 const createUploadMiddleware = (options: UploadOptions) => {
-  const uploadDir = "uploads/temp";
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
-  
   const upload = multer({
-    storage: multer.diskStorage({
-      destination: (req, file, cb) => {
-        cb(null, uploadDir);
-      },
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-        cb(
-          null,
-          file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
-        );
-      },
-    }),
+    storage: multer.memoryStorage(),
     limits: {
       fileSize: options.maxFileSize,
     },
@@ -54,11 +36,25 @@ const createUploadMiddleware = (options: UploadOptions) => {
 export const uploadTrackMiddleware = createUploadMiddleware({
   fieldName: "audio",
   maxFileSize: 500 * 1024 * 1024, // 500MB
-  allowedMimeTypes: ["audio/mpeg", "audio/mp3", "audio/wav", "audio/flac"],
+  allowedMimeTypes: [
+    "audio/mpeg",
+    "audio/mp3",
+    "audio/wav",
+    "audio/flac",
+    "audio/aac",
+    "audio/ogg",
+    "audio/m4a",
+  ],
 });
 
 export const uploadImageMiddleware = createUploadMiddleware({
   fieldName: "image",
-  maxFileSize: 5 * 1024 * 1024, // 5MB
-  allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
+  maxFileSize: 10 * 1024 * 1024, // 10MB
+  allowedMimeTypes: [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+  ],
 });

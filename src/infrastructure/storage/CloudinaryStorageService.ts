@@ -316,13 +316,14 @@ export class CloudinaryStorageService implements IStorageService {
   /**
    * Generate unique public_id from filename
    */
-  private generatePublicId(filename: string): string {
+    private generatePublicId(filename: string): string {
     const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(2, 10);
-    const nameWithoutExt = filename.replace(/\.[^/.]+$/, "");
-    const sanitizedName = nameWithoutExt.replace(/[^a-zA-Z0-9-_]/g, "_");
-    return `${sanitizedName}_${timestamp}_${randomString}`;
+    const randomString = Math.random().toString(36).substring(2, 15);
+    const ext = filename.split('.').pop()?.toLowerCase() || 'mp3';
+    
+    return `track_${timestamp}_${randomString}`;
   }
+
 
   /**
    * Get format from MIME type
